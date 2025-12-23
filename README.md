@@ -84,16 +84,55 @@ df.write.mode("overwrite").csv("hdfs://namenode:8020/output/results")
 
 ## 📊 Sample Data
 
-The repository includes sample sales data loaded in HDFS at `/data/sales/`:
+The setup includes sample sales data from [sibaramkumar/dataFiles](https://github.com/sibaramkumar/dataFiles) that can be loaded into HDFS.
 
-- `customers` - Customer information
-- `products` - Product catalog
-- `orders` - Order records
-- `order_items` - Order line items
-- `categories` - Product categories
-- `departments` - Department information
+### Downloading and Loading Sample Data
 
-See `jupyter-work/access_hdfs_data.py` for examples on how to load and analyze this data.
+The sample data (`SalesData.zip`) contains sales-related datasets. Here's how to download and load it into HDFS:
+
+```bash
+# Download the SalesData.zip file
+curl -L -o /tmp/SalesData.zip https://github.com/sibaramkumar/dataFiles/raw/main/SalesData.zip
+
+# Extract the ZIP file
+unzip -q /tmp/SalesData.zip -d /tmp/extracted
+
+# Copy extracted files to HDFS
+docker cp /tmp/extracted namenode:/tmp/extracted
+docker exec namenode hadoop fs -mkdir -p /data/sales
+docker exec namenode hadoop fs -put /tmp/extracted/* /data/sales/
+
+# Verify files are in HDFS
+docker exec namenode hadoop fs -ls /data/sales
+```
+
+### Available Datasets
+
+Once loaded, the following datasets will be available in HDFS at `/data/sales/`:
+
+- `customers` - Customer information (customer_id, name, address, etc.)
+- `products` - Product catalog (product_id, name, price, category, etc.)
+- `orders` - Order records (order_id, date, customer_id, status)
+- `order_items` - Order line items (order_item_id, order_id, product_id, quantity, etc.)
+- `categories` - Product categories (category_id, department_id, name)
+- `departments` - Department information (department_id, name)
+
+### Using the Sample Data
+
+See `jupyter-work/access_hdfs_data.py` for examples on how to load and analyze this data in Spark:
+
+```python
+from access_hdfs_data import *
+
+# All datasets are automatically loaded and ready to use
+# Example: Join orders with customers
+orders_with_customers = orders_df.join(
+    customers_df, 
+    orders_df.order_customer_id == customers_df.customer_id,
+    "inner"
+)
+orders_with_customers.show(5)
+```
 
 ## ⚙️ Configuration
 
