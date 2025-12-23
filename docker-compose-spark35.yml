@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:1.1.0-hadoop2.8-java8
+    container_name: namenode
+    volumes:
+      - ./data/namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=spark35
+    env_file:
+      - ./hadoop-spark35.env
+    ports:
+      - 50070:50070
+      - 8020:8020
+
+  datanode:
+    image: bde2020/hadoop-datanode:1.1.0-hadoop2.8-java8
+    depends_on:
+      - namenode
+    volumes:
+      - ./data/datanode:/hadoop/dfs/data
+    env_file:
+      - ./hadoop-spark35.env
+    ports:
+      - 50075:50075
+
+  spark-master:
+    image: spark:3.5.7-python3
+    container_name: spark-master
+    environment:
+      - SPARK_DAEMON_JAVA_OPTS=-Dspark.hadoop.fs.defaultFS=hdfs://namenode:8020
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+        --host 0.0.0.0
+        --port 7077
+        --webui-port 8080
+    ports:
+      - 8080:8080
+      - 7077:7077
+
+  spark-worker:
+    image: spark:3.5.7-python3
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_DAEMON_JAVA_OPTS=-Dspark.hadoop.fs.defaultFS=hdfs://namenode:8020
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
+        spark://spark-master:7077
+        --webui-port 8081
+    ports:
+      - 8081:8081
+
+  jupyter-pyspark:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter-spark35
+    container_name: jupyter-pyspark
+    depends_on:
+      - spark-master
+      - namenode
+    ports:
+      - 8888:8888
+    volumes:
+      - ./jupyter-work:/home/jovyan/work
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - HDFS_NAMENODE=namenode:8020
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.ip='0.0.0.0' --NotebookApp.allow_origin='*'
+
+  hue:
+    image: bde2020/hdfs-filebrowser:3.11
+    ports:
+      - 8088:8088
+    environment:
+      - NAMENODE_HOST=namenode
+

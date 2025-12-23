@@ -1,2 +1,14 @@
+# Data directories
 data/
-example/SparkWriteApplication.jar
+*.zip
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker
+*.log
