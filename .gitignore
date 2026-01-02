@@ -12,3 +12,4 @@ __pycache__/
 
 # Docker
 *.log
+example/extracted/

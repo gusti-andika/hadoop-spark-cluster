@@ -23,10 +23,13 @@ def init_spark(app_name="PySpark Notebook", master="spark://spark-master:7077"):
         .appName(app_name) \
         .master(master) \
         .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:8020") \
+        .config("spark.sql.catalogImplementation", "hive") \
+        .config("spark.sql.warehouse.dir", "hdfs://namenode:8020/user/hive/warehouse") \
         .config("spark.pyspark.python", python_exec) \
         .config("spark.pyspark.driver.python", python_exec) \
         .config("spark.driver.host", "jupyter-pyspark") \
         .config("spark.driver.bindAddress", "0.0.0.0") \
+        .enableHiveSupport() \
         .getOrCreate()
     
     return spark

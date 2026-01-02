@@ -10,13 +10,16 @@ RUN apt-get update && \
 
 # Set JAVA_HOME - detect architecture
 RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then \
-        JAVA_DIR="java-17-openjdk-arm64"; \
+        echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64" >> /etc/profile.d/java.sh; \
     else \
-        JAVA_DIR="java-17-openjdk-amd64"; \
-    fi && \
-    echo "export JAVA_HOME=/usr/lib/jvm/${JAVA_DIR}" >> /etc/profile.d/java.sh
+        echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> /etc/profile.d/java.sh; \
+    fi
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
+# Set JAVA_HOME based on actual installed JDK path
+RUN JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) && \
+    echo "export JAVA_HOME=${JAVA_HOME}" > /etc/environment
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH=$PATH:$JAVA_HOME/bin
 ENV PYTHONPATH=/home/jovyan/work:$PYTHONPATH
 
